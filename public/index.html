@@ -14,6 +14,7 @@
   --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
   --accent:#b8ff3c;--teal:#2de2b8;--live:#ff3d57;--live-dim:rgba(255,61,87,0.1);
   --warn:#ff8c42;--text:#dde1ec;--muted:#4a5168;--muted2:#6b738a;
+  --cancel:#9b59b6;--cancel-dim:rgba(155,89,182,0.1);
 }
 html{scroll-behavior:smooth}
 body{
@@ -65,6 +66,35 @@ body::before{
   animation:sli .4s cubic-bezier(.16,1,.3,1);
 }
 #liveBanner.show{display:flex}
+
+/* ── CANCEL BANNER ── */
+#cancelBanner{
+  display:none;margin-bottom:28px;background:var(--cancel-dim);
+  border:1px solid rgba(155,89,182,.35);border-radius:14px;
+  padding:18px 24px;align-items:flex-start;gap:16px;flex-wrap:wrap;
+  animation:sli .4s cubic-bezier(.16,1,.3,1);
+}
+#cancelBanner.show{display:flex}
+.cancel-icon{font-size:22px;flex-shrink:0;margin-top:2px}
+.cancel-body{flex:1}
+.cancel-lbl{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--cancel);margin-bottom:6px}
+.cancel-list{display:flex;flex-direction:column;gap:6px}
+.cancel-item{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(155,89,182,.08);border:1px solid rgba(155,89,182,.2);
+  border-radius:9px;padding:10px 14px;
+}
+.cancel-name{font-family:'Fraunces',serif;font-size:16px;color:var(--text);flex:1}
+.cancel-time{font-size:10px;color:var(--muted2)}
+.cancel-badge{font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:rgba(155,89,182,.15);color:var(--cancel);border:1px solid rgba(155,89,182,.3);white-space:nowrap}
+.btn-dismiss{
+  background:transparent;border:1px solid rgba(155,89,182,.3);color:var(--cancel);
+  font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.06em;
+  padding:7px 14px;border-radius:8px;cursor:pointer;transition:all .2s;white-space:nowrap;
+  align-self:flex-start;
+}
+.btn-dismiss:hover{background:rgba(155,89,182,.15)}
+
 @keyframes sli{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 .lpulse{width:12px;height:12px;border-radius:50%;background:var(--live);flex-shrink:0;box-shadow:0 0 0 0 rgba(255,61,87,.7);animation:pr 1.1s ease-out infinite}
 .ltext{flex:1}
@@ -79,8 +109,9 @@ body::before{
 }
 .btn-join:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,61,87,.4)}
 
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:36px}
-@media(max-width:580px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:36px}
+@media(max-width:640px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:420px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat{
   background:var(--s1);border:1px solid var(--border);
   border-radius:12px;padding:16px 18px;
@@ -111,20 +142,25 @@ body::before{
 .card.is-live::before{background:var(--live)}
 .card.is-up::before{background:var(--accent)}
 .card.is-done::before{background:transparent}
+.card.is-cancelled{border-color:rgba(155,89,182,.25);opacity:.8}
+.card.is-cancelled::before{background:var(--cancel)}
 .card.is-up:hover{border-color:rgba(184,255,60,.25);transform:translateX(3px)}
 .card.is-live:hover{border-color:rgba(255,61,87,.4);transform:translateX(3px)}
+.card.is-cancelled:hover{border-color:rgba(155,89,182,.4);transform:translateX(3px)}
 .cbody{display:flex;align-items:center;gap:18px;padding:16px 20px;flex-wrap:wrap}
 .ctime{min-width:88px}
 .ctv{font-size:19px;font-weight:500;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
 .card.is-live .ctv{color:var(--live)}
 .card.is-up   .ctv{color:var(--accent)}
 .card.is-done .ctv{color:var(--muted)}
+.card.is-cancelled .ctv{color:var(--cancel);text-decoration:line-through;text-decoration-color:rgba(155,89,182,.5)}
 .cap{font-size:10px;color:var(--muted);margin-top:2px}
 .cdiv{width:1px;height:46px;background:var(--border);flex-shrink:0}
 @media(max-width:500px){.cdiv{display:none}}
 .cinfo{flex:1}
 .csub{font-family:'Fraunces',serif;font-size:19px;color:var(--text);line-height:1.2}
 .card.is-done .csub{color:var(--muted2)}
+.card.is-cancelled .csub{color:var(--muted2);text-decoration:line-through;text-decoration-color:rgba(155,89,182,.4)}
 .cmeta{display:flex;gap:14px;flex-wrap:wrap;margin-top:5px;font-size:11px;color:var(--muted2)}
 .cmeta span{display:flex;align-items:center;gap:4px}
 .ccd{
@@ -138,6 +174,7 @@ body::before{
 .badge-live{background:rgba(255,61,87,.12);color:var(--live);border:1px solid rgba(255,61,87,.25)}
 .badge-up{background:rgba(184,255,60,.08);color:var(--accent);border:1px solid rgba(184,255,60,.2)}
 .badge-done{background:rgba(74,81,104,.15);color:var(--muted);border:1px solid var(--border)}
+.badge-cancelled{background:rgba(155,89,182,.12);color:var(--cancel);border:1px solid rgba(155,89,182,.25)}
 .btn-class{
   display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
   border-radius:8px;border:none;cursor:pointer;
@@ -218,6 +255,7 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
     </div>
   </header>
 
+  <!-- Live banner -->
   <div id="liveBanner">
     <div class="lpulse"></div>
     <div class="ltext">
@@ -228,13 +266,25 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
     <a class="btn-join" id="ljoin" href="#" target="_blank">Join →</a>
   </div>
 
+  <!-- Cancellation banner -->
+  <div id="cancelBanner">
+    <div class="cancel-icon">🚫</div>
+    <div class="cancel-body">
+      <div class="cancel-lbl">Possibly Cancelled</div>
+      <div class="cancel-list" id="cancelList"></div>
+    </div>
+    <button class="btn-dismiss" onclick="dismissCancel()">Dismiss</button>
+  </div>
+
   <div id="errBox"></div>
 
+  <!-- Stats — now 5 columns including Cancelled -->
   <div class="stats" id="statsRow" style="display:none">
     <div class="stat" style="animation-delay:.00s"><div class="slbl">Total</div><div class="sval" id="sTotal" style="color:var(--accent)">—</div></div>
     <div class="stat" style="animation-delay:.05s"><div class="slbl">Live</div><div class="sval" id="sLive" style="color:var(--live)">—</div></div>
     <div class="stat" style="animation-delay:.10s"><div class="slbl">Upcoming</div><div class="sval" id="sUp">—</div></div>
     <div class="stat" style="animation-delay:.15s"><div class="slbl">Done</div><div class="sval" id="sDone" style="color:var(--muted)">—</div></div>
+    <div class="stat" style="animation-delay:.20s"><div class="slbl">Cancelled</div><div class="sval" id="sCancelled" style="color:var(--cancel)">0</div></div>
   </div>
 
   <div id="skeleton">
@@ -263,18 +313,28 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
 'use strict';
 const POLL = 60_000;
 const notified = new Set();
-let classes = [];
+let classes    = [];
+let prevClasses = [];          // ← track previous fetch
+let cancelledClasses = [];     // ← persistent across renders until dismissed
 
+// ─────────────────────────────────────────────
 async function load() {
   setSt('syncing');
   document.getElementById('refreshBtn').classList.add('loading');
   document.getElementById('errBox').classList.remove('show');
   try {
-    // ← hits our own Netlify function, zero CORS
     const res  = await fetch('/api/classes');
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Unknown error');
-    classes = extract(json.data);
+
+    const fresh = extract(json.data);
+
+    // detect cancellations BEFORE updating classes
+    if (prevClasses.length) detectCancelled(prevClasses, fresh);
+
+    classes = fresh;
+    prevClasses = [...classes];
+
     render(classes);
     document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
     setSt(classes.some(c => st(c) === 'live') ? 'live' : 'ok');
@@ -295,6 +355,65 @@ async function load() {
   }
 }
 
+// ─────────────────────────────────────────────
+// Cancellation detection
+// ─────────────────────────────────────────────
+function detectCancelled(prev, curr) {
+  const currIds = new Set(curr.map(c => c.id));
+  const newlyCancelled = prev.filter(c => !currIds.has(c.id) && st(c) !== 'done');
+  if (!newlyCancelled.length) return;
+
+  // merge into persistent list (avoid dupes)
+  const existingIds = new Set(cancelledClasses.map(c => c.id));
+  newlyCancelled.forEach(c => {
+    if (!existingIds.has(c.id)) cancelledClasses.push({...c, _cancelled: true});
+  });
+
+  // fire notifications
+  newlyCancelled.forEach(c => {
+    toast('🚫', 'Class Cancelled?', `"${c.subject}" disappeared from the schedule!`);
+    if (Notification.permission === 'granted') {
+      new Notification('🚫 Possibly Cancelled', {
+        body: `${c.subject} was removed from today's schedule.`,
+        icon: 'https://deltastudy.site/favicon.ico'
+      });
+    }
+  });
+
+  renderCancelBanner();
+}
+
+function renderCancelBanner() {
+  if (!cancelledClasses.length) {
+    document.getElementById('cancelBanner').classList.remove('show');
+    return;
+  }
+  const list = document.getElementById('cancelList');
+  list.innerHTML = '';
+  cancelledClasses.forEach(c => {
+    const start = parseT(c.startAt);
+    const tf    = f12(start);
+    const item  = document.createElement('div');
+    item.className = 'cancel-item';
+    item.innerHTML = `
+      <div class="cancel-name">${c.subject}</div>
+      ${start ? `<div class="cancel-time">${tf.t} ${tf.ap}</div>` : ''}
+      <div class="cancel-badge">Removed</div>
+    `;
+    list.appendChild(item);
+  });
+  document.getElementById('cancelBanner').classList.add('show');
+  // update stat counter
+  document.getElementById('sCancelled').textContent = cancelledClasses.length;
+}
+
+function dismissCancel() {
+  cancelledClasses = [];
+  document.getElementById('cancelBanner').classList.remove('show');
+  document.getElementById('sCancelled').textContent = '0';
+}
+
+// ─────────────────────────────────────────────
 function extract(raw) {
   let arr = [];
   if (Array.isArray(raw))                arr = raw;
@@ -356,24 +475,41 @@ function render(arr) {
   const list = document.getElementById('classList');
   list.innerHTML = '';
   const sorted = [...arr].sort((a,b)=>{const ta=parseT(a.startAt),tb=parseT(b.startAt);return(ta&&tb)?ta-tb:0;});
-  const g = {live:[],upcoming:[],done:[],unknown:[]};
+  const g = {live:[],upcoming:[],done:[],unknown:[],cancelled:[]};
   let fl = null;
+
+  // add persistent cancelled classes into the group
+  cancelledClasses.forEach(c => g.cancelled.push(c));
+
   sorted.forEach(c => { const s=st(c); g[s].push(c); if(s==='live'&&!fl)fl=c; notify(c); });
+
   document.getElementById('statsRow').style.display = '';
-  document.getElementById('sTotal').textContent = arr.length;
-  document.getElementById('sLive').textContent  = g.live.length;
-  document.getElementById('sUp').textContent    = g.upcoming.length;
-  document.getElementById('sDone').textContent  = g.done.length;
-  if (!arr.length) { document.getElementById('emptyState').classList.add('show'); return; }
-  [{key:'live',label:'Live Now',cls:'is-live'},{key:'upcoming',label:'Upcoming',cls:'is-up'},{key:'done',label:'Completed',cls:'is-done'},{key:'unknown',label:'Scheduled',cls:'is-up'}]
-    .forEach(({key,label,cls}) => {
-      const grp = g[key]; if (!grp.length) return;
-      const sh = document.createElement('div');
-      sh.className = 'sec-hdr';
-      sh.innerHTML = `<div class="sec-lbl">${label}</div><div class="sec-line"></div><div class="sec-n">${grp.length}</div>`;
-      list.appendChild(sh);
-      grp.forEach(c => list.appendChild(mkCard(c,cls)));
-    });
+  document.getElementById('sTotal').textContent     = arr.length;
+  document.getElementById('sLive').textContent      = g.live.length;
+  document.getElementById('sUp').textContent        = g.upcoming.length;
+  document.getElementById('sDone').textContent      = g.done.length;
+  document.getElementById('sCancelled').textContent = cancelledClasses.length;
+
+  if (!arr.length && !cancelledClasses.length) {
+    document.getElementById('emptyState').classList.add('show');
+    return;
+  }
+
+  [
+    {key:'live',      label:'Live Now',           cls:'is-live'},
+    {key:'upcoming',  label:'Upcoming',            cls:'is-up'},
+    {key:'done',      label:'Completed',           cls:'is-done'},
+    {key:'unknown',   label:'Scheduled',           cls:'is-up'},
+    {key:'cancelled', label:'Possibly Cancelled',  cls:'is-cancelled'},
+  ].forEach(({key,label,cls}) => {
+    const grp = g[key]; if (!grp.length) return;
+    const sh = document.createElement('div');
+    sh.className = 'sec-hdr';
+    sh.innerHTML = `<div class="sec-lbl">${label}</div><div class="sec-line"></div><div class="sec-n">${grp.length}</div>`;
+    list.appendChild(sh);
+    grp.forEach(c => list.appendChild(mkCard(c, cls)));
+  });
+
   const banner = document.getElementById('liveBanner');
   if (fl) {
     document.getElementById('lname').textContent = fl.subject;
@@ -381,20 +517,36 @@ function render(arr) {
     const ja = document.getElementById('ljoin'); ja.href=fl.link||'#'; ja.style.display=fl.link?'inline-flex':'none';
     banner.classList.add('show');
   } else banner.classList.remove('show');
+
+  // re-render cancel banner in case counts changed
+  renderCancelBanner();
 }
 
 function mkCard(c, cls) {
   const s=st(c), start=parseT(c.startAt), tf=f12(start);
-  const badges = {'is-live':'<span class="badge badge-live">● Live</span>','is-up':'<span class="badge badge-up">Upcoming</span>','is-done':'<span class="badge badge-done">Done</span>'};
+  const isCancelled = cls === 'is-cancelled';
+  const badges = {
+    'is-live':      '<span class="badge badge-live">● Live</span>',
+    'is-up':        '<span class="badge badge-up">Upcoming</span>',
+    'is-done':      '<span class="badge badge-done">Done</span>',
+    'is-cancelled': '<span class="badge badge-cancelled">🚫 Cancelled?</span>',
+  };
   let cdH = '';
-  if ((s==='upcoming'||s==='unknown')&&start){const ms=start-Date.now();cdH=`<div class="ccd${ms<600000?' urgent':''}" data-ts="${start.getTime()}">${cd(ms)}</div>`;}
+  if (!isCancelled && (s==='upcoming'||s==='unknown')&&start){
+    const ms=start-Date.now();
+    cdH=`<div class="ccd${ms<600000?' urgent':''}" data-ts="${start.getTime()}">${cd(ms)}</div>`;
+  }
   const meta = [];
   if (c.teacher)  meta.push(`<span>👤 ${c.teacher}</span>`);
   if (c.platform) meta.push(`<span>📡 ${c.platform}</span>`);
   if (c.topic)    meta.push(`<span>📌 ${c.topic}</span>`);
   if (c.dur)      meta.push(`<span>⏱ ${c.dur}m</span>`);
+  if (isCancelled) meta.push(`<span style="color:var(--cancel)">⚠️ Removed from schedule</span>`);
   let btn = '';
-  if (c.link&&s!=='done'){const bc=s==='live'?'red':'grn';btn=`<a class="btn-class ${bc}" href="${c.link}" target="_blank">Join →</a>`;}
+  if (!isCancelled && c.link && s!=='done'){
+    const bc=s==='live'?'red':'grn';
+    btn=`<a class="btn-class ${bc}" href="${c.link}" target="_blank">Join →</a>`;
+  }
   const div = document.createElement('div');
   div.className = `card ${cls}`;
   div.innerHTML = `<div class="cbody"><div class="ctime"><div class="ctv">${tf.t}</div><div class="cap">${tf.ap}</div>${cdH}</div><div class="cdiv"></div><div class="cinfo"><div class="csub">${c.subject}</div>${meta.length?`<div class="cmeta">${meta.join('')}</div>`:''}</div><div class="cright">${badges[cls]||''}${btn}</div></div>`;
