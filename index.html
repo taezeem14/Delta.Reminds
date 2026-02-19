@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DeltaStudy — Class Reminder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060709;--s1:#0c0e12;--s2:#12151b;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --accent:#b8ff3c;--teal:#2de2b8;--live:#ff3d57;--live-dim:rgba(255,61,87,0.1);
+  --warn:#ff8c42;--text:#dde1ec;--muted:#4a5168;--muted2:#6b738a;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh;overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 80% -10%,rgba(184,255,60,.07) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 50% at -10% 80%,rgba(45,226,184,.06) 0%,transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M60 0H0v60' fill='none' stroke='rgba(255,255,255,0.025)' stroke-width='0.5'/%3E%3C/svg%3E") repeat;
+}
+.page{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 20px 100px}
+
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:36px 0 28px;border-bottom:1px solid var(--border);
+  margin-bottom:40px;gap:16px;flex-wrap:wrap;
+}
+.brand{display:flex;flex-direction:column;gap:5px}
+.brand-name{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(22px,3.5vw,34px);letter-spacing:-.04em;line-height:1}
+.brand-name em{color:var(--accent);font-style:normal}
+.brand-sub{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+
+.chip{
+  display:inline-flex;align-items:center;gap:7px;font-size:11px;
+  padding:7px 14px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--s1);color:var(--muted2);cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+  font-family:'JetBrains Mono',monospace;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.active{border-color:var(--teal);color:var(--teal);background:rgba(45,226,184,.08)}
+.chip.loading svg{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 2s ease infinite;flex-shrink:0}
+.sdot.syncing{background:var(--teal)}
+.sdot.live{background:var(--live);animation:pr 1.2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes pr{0%,100%{box-shadow:0 0 0 0 rgba(255,61,87,.6)}70%{box-shadow:0 0 0 8px rgba(255,61,87,0)}}
+
+#liveBanner{
+  display:none;margin-bottom:28px;background:var(--live-dim);
+  border:1px solid rgba(255,61,87,.3);border-radius:14px;
+  padding:18px 24px;align-items:center;gap:16px;flex-wrap:wrap;
+  animation:sli .4s cubic-bezier(.16,1,.3,1);
+}
+#liveBanner.show{display:flex}
+@keyframes sli{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.lpulse{width:12px;height:12px;border-radius:50%;background:var(--live);flex-shrink:0;box-shadow:0 0 0 0 rgba(255,61,87,.7);animation:pr 1.1s ease-out infinite}
+.ltext{flex:1}
+.lbadge{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--live);margin-bottom:4px}
+.lname{font-family:'Fraunces',serif;font-size:20px;color:var(--text)}
+.lmeta{font-size:11px;color:var(--muted2);margin-top:3px}
+.btn-join{
+  display:inline-flex;align-items:center;gap:8px;background:var(--live);color:#fff;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;
+  padding:11px 22px;border-radius:9px;border:none;text-decoration:none;
+  cursor:pointer;transition:transform .2s,box-shadow .2s;white-space:nowrap;
+}
+.btn-join:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,61,87,.4)}
+
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:36px}
+@media(max-width:580px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:12px;padding:16px 18px;
+  display:flex;flex-direction:column;gap:5px;animation:fu .5s ease both;
+}
+.slbl{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.sval{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;line-height:1;color:var(--text)}
+
+#skeleton{display:flex;flex-direction:column;gap:10px}
+.sk{height:82px;border-radius:13px;background:var(--s1);border:1px solid var(--border);overflow:hidden;position:relative}
+.sk::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.03) 50%,transparent 100%);background-size:200%;animation:shim 1.5s infinite}
+@keyframes shim{from{background-position:200%}to{background-position:-200%}}
+
+#classList{display:flex;flex-direction:column}
+.sec-hdr{display:flex;align-items:center;gap:10px;margin:24px 0 12px}
+.sec-lbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.sec-line{flex:1;height:1px;background:var(--border)}
+.sec-n{font-size:10px;color:var(--muted);background:var(--s1);border:1px solid var(--border);border-radius:999px;padding:2px 9px}
+
+.card{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:13px;overflow:hidden;position:relative;
+  transition:border-color .25s,transform .2s;
+  animation:fu .45s ease both;margin-bottom:10px;
+}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--muted);border-radius:3px 0 0 3px;transition:background .3s}
+.card.is-live{border-color:rgba(255,61,87,.2)}
+.card.is-live::before{background:var(--live)}
+.card.is-up::before{background:var(--accent)}
+.card.is-done::before{background:transparent}
+.card.is-up:hover{border-color:rgba(184,255,60,.25);transform:translateX(3px)}
+.card.is-live:hover{border-color:rgba(255,61,87,.4);transform:translateX(3px)}
+.cbody{display:flex;align-items:center;gap:18px;padding:16px 20px;flex-wrap:wrap}
+.ctime{min-width:88px}
+.ctv{font-size:19px;font-weight:500;line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+.card.is-live .ctv{color:var(--live)}
+.card.is-up   .ctv{color:var(--accent)}
+.card.is-done .ctv{color:var(--muted)}
+.cap{font-size:10px;color:var(--muted);margin-top:2px}
+.cdiv{width:1px;height:46px;background:var(--border);flex-shrink:0}
+@media(max-width:500px){.cdiv{display:none}}
+.cinfo{flex:1}
+.csub{font-family:'Fraunces',serif;font-size:19px;color:var(--text);line-height:1.2}
+.card.is-done .csub{color:var(--muted2)}
+.cmeta{display:flex;gap:14px;flex-wrap:wrap;margin-top:5px;font-size:11px;color:var(--muted2)}
+.cmeta span{display:flex;align-items:center;gap:4px}
+.ccd{
+  font-size:11px;margin-top:6px;padding:3px 9px;border-radius:6px;width:fit-content;
+  background:rgba(184,255,60,.08);color:var(--accent);
+  border:1px solid rgba(184,255,60,.18);font-variant-numeric:tabular-nums;
+}
+.ccd.urgent{background:rgba(255,140,66,.1);color:var(--warn);border-color:rgba(255,140,66,.25)}
+.cright{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.badge{font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.badge-live{background:rgba(255,61,87,.12);color:var(--live);border:1px solid rgba(255,61,87,.25)}
+.badge-up{background:rgba(184,255,60,.08);color:var(--accent);border:1px solid rgba(184,255,60,.2)}
+.badge-done{background:rgba(74,81,104,.15);color:var(--muted);border:1px solid var(--border)}
+.btn-class{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 16px;
+  border-radius:8px;border:none;cursor:pointer;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:11px;
+  text-decoration:none;transition:transform .2s,box-shadow .2s;
+}
+.btn-class.red{background:var(--live);color:#fff}
+.btn-class.grn{background:var(--accent);color:#060709}
+.btn-class:hover{transform:translateY(-2px)}
+.btn-class.red:hover{box-shadow:0 5px 16px rgba(255,61,87,.4)}
+.btn-class.grn:hover{box-shadow:0 5px 16px rgba(184,255,60,.35)}
+
+#emptyState{display:none;text-align:center;padding:80px 20px}
+#emptyState.show{display:block}
+.eico{font-size:52px;margin-bottom:16px}
+.ettl{font-family:'Fraunces',serif;font-size:24px;margin-bottom:8px}
+.esub{font-size:12px;color:var(--muted2)}
+
+#errBox{
+  display:none;background:rgba(255,61,87,.06);
+  border:1px solid rgba(255,61,87,.2);border-radius:12px;
+  padding:16px 20px;margin-bottom:24px;font-size:12px;color:var(--warn);line-height:1.6;
+}
+#errBox.show{display:block}
+
+footer{
+  margin-top:60px;padding-top:20px;border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:12px;font-size:10px;color:var(--muted);
+}
+footer a{color:var(--muted);text-decoration:none}
+footer a:hover{color:var(--accent)}
+code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-radius:4px}
+
+#toasts{position:fixed;bottom:24px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{
+  background:var(--s2);border:1px solid var(--border2);border-radius:11px;
+  padding:12px 18px;display:flex;align-items:flex-start;gap:10px;
+  box-shadow:0 8px 30px rgba(0,0,0,.5);max-width:300px;
+  animation:tin .3s cubic-bezier(.16,1,.3,1);pointer-events:all;
+}
+.toast.out{animation:tout .25s ease forwards}
+@keyframes tin{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes tout{to{opacity:0;transform:translateX(12px)}}
+.tico{font-size:16px;flex-shrink:0;margin-top:1px}
+.tttl{font-family:'Syne',sans-serif;font-weight:700;font-size:12px}
+.tsub{font-size:10px;color:var(--muted2);margin-top:2px}
+
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.08s}
+.card:nth-child(3){animation-delay:.12s}.card:nth-child(4){animation-delay:.16s}
+.card:nth-child(5){animation-delay:.20s}.card:nth-child(6){animation-delay:.24s}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--s2);border-radius:999px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hdr">
+    <div class="brand">
+      <div class="brand-name">delta<em>.</em>remind</div>
+      <div class="brand-sub">Class Schedule &amp; Reminders</div>
+    </div>
+    <div class="hdr-right">
+      <button class="chip" id="notifBtn" onclick="askNotif()">🔔 Enable Alerts</button>
+      <button class="chip" id="refreshBtn" onclick="load()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+        Refresh
+      </button>
+      <div class="chip" style="cursor:default">
+        <div class="sdot" id="sdot"></div>
+        <span id="stxt">Connecting</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="liveBanner">
+    <div class="lpulse"></div>
+    <div class="ltext">
+      <div class="lbadge">● Live Now</div>
+      <div class="lname" id="lname">—</div>
+      <div class="lmeta" id="lmeta">—</div>
+    </div>
+    <a class="btn-join" id="ljoin" href="#" target="_blank">Join →</a>
+  </div>
+
+  <div id="errBox"></div>
+
+  <div class="stats" id="statsRow" style="display:none">
+    <div class="stat" style="animation-delay:.00s"><div class="slbl">Total</div><div class="sval" id="sTotal" style="color:var(--accent)">—</div></div>
+    <div class="stat" style="animation-delay:.05s"><div class="slbl">Live</div><div class="sval" id="sLive" style="color:var(--live)">—</div></div>
+    <div class="stat" style="animation-delay:.10s"><div class="slbl">Upcoming</div><div class="sval" id="sUp">—</div></div>
+    <div class="stat" style="animation-delay:.15s"><div class="slbl">Done</div><div class="sval" id="sDone" style="color:var(--muted)">—</div></div>
+  </div>
+
+  <div id="skeleton">
+    <div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div>
+  </div>
+
+  <div id="classList"></div>
+
+  <div id="emptyState">
+    <div class="eico">📭</div>
+    <div class="ettl">No classes today</div>
+    <div class="esub">Enjoy the break — check back tomorrow.</div>
+  </div>
+
+  <footer>
+    <span>Batch <code>69047c05fc3bb2dd64711bd8</code></span>
+    <div style="display:flex;gap:16px;align-items:center">
+      <span id="lastSync">—</span>
+      <a href="https://deltastudy.site" target="_blank">deltastudy.site ↗</a>
+    </div>
+  </footer>
+</div>
+<div id="toasts"></div>
+
+<script>
+'use strict';
+const POLL = 60_000;
+const notified = new Set();
+let classes = [];
+
+async function load() {
+  setSt('syncing');
+  document.getElementById('refreshBtn').classList.add('loading');
+  document.getElementById('errBox').classList.remove('show');
+  try {
+    // ← hits our own Netlify function, zero CORS
+    const res  = await fetch('/api/classes');
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Unknown error');
+    classes = extract(json.data);
+    render(classes);
+    document.getElementById('lastSync').textContent = 'Synced ' + new Date().toLocaleTimeString();
+    setSt(classes.some(c => st(c) === 'live') ? 'live' : 'ok');
+  } catch(e) {
+    console.error(e);
+    setSt('err');
+    showErr(`⚠️ ${e.message} — retrying in 60s.`);
+    toast('⚠️', 'Sync failed', e.message.slice(0, 70));
+    if (!classes.length) {
+      document.getElementById('skeleton').style.display = 'none';
+      document.getElementById('emptyState').classList.add('show');
+      document.querySelector('.eico').textContent = '🔌';
+      document.querySelector('.ettl').textContent = 'Function Error';
+      document.querySelector('.esub').textContent = 'Check Netlify function logs.';
+    }
+  } finally {
+    document.getElementById('refreshBtn').classList.remove('loading');
+  }
+}
+
+function extract(raw) {
+  let arr = [];
+  if (Array.isArray(raw))                arr = raw;
+  else if (Array.isArray(raw?.classes))  arr = raw.classes;
+  else if (Array.isArray(raw?.data))     arr = raw.data;
+  else if (Array.isArray(raw?.schedule)) arr = raw.schedule;
+  else if (raw?.subject || raw?.title)   arr = [raw];
+  else { const v = Object.values(raw||{}).find(x => Array.isArray(x)); arr = v||[]; }
+  return arr.map((r,i) => ({
+    id:      r._id||r.id||`c${i}`,
+    subject: r.subject||r.title||r.name||r.courseName||'Class',
+    teacher: r.teacher||r.instructor||r.teacherName||r.faculty||null,
+    startAt: r.startTime||r.start||r.startAt||r.scheduledAt||r.time||null,
+    endAt:   r.endTime||r.end||r.endAt||null,
+    link:    r.meetLink||r.link||r.joinUrl||r.zoomLink||r.url||null,
+    isLive:  !!(r.isLive||r.live||r.status==='live'||r.ongoing),
+    dur:     r.duration||r.durationMinutes||60,
+    topic:   r.topic||r.description||null,
+    platform:r.platform||r.mode||null,
+  }));
+}
+
+function parseT(s) {
+  if (!s) return null;
+  if (typeof s === 'number') return new Date(s);
+  if (s.includes('T') || s.includes('Z')) return new Date(s);
+  const [t, ap] = s.split(' '); let [h,m] = t.split(':').map(Number);
+  if (ap){if(ap.toLowerCase()==='pm'&&h!==12)h+=12;if(ap.toLowerCase()==='am'&&h===12)h=0;}
+  const d = new Date(); d.setHours(h,m,0,0); return d;
+}
+
+function st(c) {
+  if (c.isLive) return 'live';
+  const s = parseT(c.startAt); if (!s) return 'unknown';
+  const e = c.endAt ? parseT(c.endAt) : new Date(s.getTime()+c.dur*60000);
+  const n = new Date();
+  if (n>=s && n<=e) return 'live';
+  if (n<s)          return 'upcoming';
+  return 'done';
+}
+
+function f12(d) {
+  if (!d) return {t:'--:--',ap:''};
+  const h=d.getHours(),m=d.getMinutes();
+  return {t:`${String(h%12||12).padStart(2,'0')}:${String(m).padStart(2,'0')}`,ap:h>=12?'PM':'AM'};
+}
+
+function cd(ms) {
+  if (ms<=0) return 'starting now';
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+  if (h>0) return `in ${h}h ${m%60}m`;
+  if (m>0) return `in ${m}m ${s%60}s`;
+  return `in ${s}s`;
+}
+
+function render(arr) {
+  document.getElementById('skeleton').style.display = 'none';
+  document.getElementById('emptyState').classList.remove('show');
+  const list = document.getElementById('classList');
+  list.innerHTML = '';
+  const sorted = [...arr].sort((a,b)=>{const ta=parseT(a.startAt),tb=parseT(b.startAt);return(ta&&tb)?ta-tb:0;});
+  const g = {live:[],upcoming:[],done:[],unknown:[]};
+  let fl = null;
+  sorted.forEach(c => { const s=st(c); g[s].push(c); if(s==='live'&&!fl)fl=c; notify(c); });
+  document.getElementById('statsRow').style.display = '';
+  document.getElementById('sTotal').textContent = arr.length;
+  document.getElementById('sLive').textContent  = g.live.length;
+  document.getElementById('sUp').textContent    = g.upcoming.length;
+  document.getElementById('sDone').textContent  = g.done.length;
+  if (!arr.length) { document.getElementById('emptyState').classList.add('show'); return; }
+  [{key:'live',label:'Live Now',cls:'is-live'},{key:'upcoming',label:'Upcoming',cls:'is-up'},{key:'done',label:'Completed',cls:'is-done'},{key:'unknown',label:'Scheduled',cls:'is-up'}]
+    .forEach(({key,label,cls}) => {
+      const grp = g[key]; if (!grp.length) return;
+      const sh = document.createElement('div');
+      sh.className = 'sec-hdr';
+      sh.innerHTML = `<div class="sec-lbl">${label}</div><div class="sec-line"></div><div class="sec-n">${grp.length}</div>`;
+      list.appendChild(sh);
+      grp.forEach(c => list.appendChild(mkCard(c,cls)));
+    });
+  const banner = document.getElementById('liveBanner');
+  if (fl) {
+    document.getElementById('lname').textContent = fl.subject;
+    document.getElementById('lmeta').textContent = [fl.teacher,fl.topic].filter(Boolean).join(' · ')||'Happening right now';
+    const ja = document.getElementById('ljoin'); ja.href=fl.link||'#'; ja.style.display=fl.link?'inline-flex':'none';
+    banner.classList.add('show');
+  } else banner.classList.remove('show');
+}
+
+function mkCard(c, cls) {
+  const s=st(c), start=parseT(c.startAt), tf=f12(start);
+  const badges = {'is-live':'<span class="badge badge-live">● Live</span>','is-up':'<span class="badge badge-up">Upcoming</span>','is-done':'<span class="badge badge-done">Done</span>'};
+  let cdH = '';
+  if ((s==='upcoming'||s==='unknown')&&start){const ms=start-Date.now();cdH=`<div class="ccd${ms<600000?' urgent':''}" data-ts="${start.getTime()}">${cd(ms)}</div>`;}
+  const meta = [];
+  if (c.teacher)  meta.push(`<span>👤 ${c.teacher}</span>`);
+  if (c.platform) meta.push(`<span>📡 ${c.platform}</span>`);
+  if (c.topic)    meta.push(`<span>📌 ${c.topic}</span>`);
+  if (c.dur)      meta.push(`<span>⏱ ${c.dur}m</span>`);
+  let btn = '';
+  if (c.link&&s!=='done'){const bc=s==='live'?'red':'grn';btn=`<a class="btn-class ${bc}" href="${c.link}" target="_blank">Join →</a>`;}
+  const div = document.createElement('div');
+  div.className = `card ${cls}`;
+  div.innerHTML = `<div class="cbody"><div class="ctime"><div class="ctv">${tf.t}</div><div class="cap">${tf.ap}</div>${cdH}</div><div class="cdiv"></div><div class="cinfo"><div class="csub">${c.subject}</div>${meta.length?`<div class="cmeta">${meta.join('')}</div>`:''}</div><div class="cright">${badges[cls]||''}${btn}</div></div>`;
+  return div;
+}
+
+setInterval(() => {
+  document.querySelectorAll('.ccd[data-ts]').forEach(el => {
+    const ms = parseInt(el.dataset.ts) - Date.now();
+    el.textContent = ms<=0 ? 'starting now' : cd(ms);
+    el.classList.toggle('urgent', ms<600000);
+  });
+}, 1000);
+
+async function askNotif() {
+  if (!('Notification' in window)) { toast('❌','Not supported','Browser can\'t send notifications.'); return; }
+  const p = await Notification.requestPermission();
+  if (p==='granted') {
+    document.getElementById('notifBtn').classList.add('active');
+    document.getElementById('notifBtn').textContent = '✅ Alerts On';
+    toast('✅','Alerts enabled','10-min heads-up before every class.');
+  } else toast('🔕','Denied','Allow in browser site settings.');
+}
+
+function notify(c) {
+  const start = parseT(c.startAt); if (!start) return;
+  const ms = start - Date.now(), k = c.id+'_10';
+  if (!notified.has(k)&&ms>0&&ms<=600000) { notified.add(k); fire(c,`Starting in ~${Math.ceil(ms/60000)} min`); }
+  if (!notified.has(k)&&ms>600000) { setTimeout(()=>{ notified.add(k); fire(c,`Starting in 10 minutes${c.teacher?' — '+c.teacher:''}`); }, ms-600000); }
+}
+
+function fire(c, body) {
+  if (Notification.permission==='granted') new Notification('⏰ '+c.subject, {body, icon:'https://deltastudy.site/favicon.ico'});
+  toast('⏰', c.subject, body);
+}
+
+function setSt(s) {
+  const dot=document.getElementById('sdot'), txt=document.getElementById('stxt');
+  dot.className = 'sdot';
+  if      (s==='syncing') { dot.classList.add('syncing'); txt.textContent='Syncing…'; }
+  else if (s==='live')    { dot.classList.add('live');    txt.textContent='Live class!'; }
+  else if (s==='ok')      {                               txt.textContent='Up to date'; }
+  else                    {                               txt.textContent='Error'; }
+}
+
+function showErr(html) { const b=document.getElementById('errBox'); b.innerHTML=html; b.classList.add('show'); }
+
+function toast(icon, title, sub) {
+  const c=document.getElementById('toasts'), el=document.createElement('div');
+  el.className='toast';
+  el.innerHTML=`<div class="tico">${icon}</div><div><div class="tttl">${title}</div><div class="tsub">${sub}</div></div>`;
+  c.appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),260); }, 4500);
+}
+
+if (Notification.permission==='granted') {
+  document.getElementById('notifBtn').classList.add('active');
+  document.getElementById('notifBtn').textContent = '✅ Alerts On';
+}
+
+load();
+setInterval(load, POLL);
+</script>
+</body>
+</html>
