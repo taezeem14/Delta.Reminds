@@ -67,7 +67,6 @@ body::before{
 }
 #liveBanner.show{display:flex}
 
-/* ── CANCEL BANNER ── */
 #cancelBanner{
   display:none;margin-bottom:28px;background:var(--cancel-dim);
   border:1px solid rgba(155,89,182,.35);border-radius:14px;
@@ -159,6 +158,7 @@ body::before{
 @media(max-width:500px){.cdiv{display:none}}
 .cinfo{flex:1}
 .csub{font-family:'Fraunces',serif;font-size:19px;color:var(--text);line-height:1.2}
+.ctopic{font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.4;font-style:italic}
 .card.is-done .csub{color:var(--muted2)}
 .card.is-cancelled .csub{color:var(--muted2);text-decoration:line-through;text-decoration-color:rgba(155,89,182,.4)}
 .cmeta{display:flex;gap:14px;flex-wrap:wrap;margin-top:5px;font-size:11px;color:var(--muted2)}
@@ -255,7 +255,6 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
     </div>
   </header>
 
-  <!-- Live banner -->
   <div id="liveBanner">
     <div class="lpulse"></div>
     <div class="ltext">
@@ -266,7 +265,6 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
     <a class="btn-join" id="ljoin" href="#" target="_blank">Join →</a>
   </div>
 
-  <!-- Cancellation banner -->
   <div id="cancelBanner">
     <div class="cancel-icon">🚫</div>
     <div class="cancel-body">
@@ -278,7 +276,6 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
 
   <div id="errBox"></div>
 
-  <!-- Stats — now 5 columns including Cancelled -->
   <div class="stats" id="statsRow" style="display:none">
     <div class="stat" style="animation-delay:.00s"><div class="slbl">Total</div><div class="sval" id="sTotal" style="color:var(--accent)">—</div></div>
     <div class="stat" style="animation-delay:.05s"><div class="slbl">Live</div><div class="sval" id="sLive" style="color:var(--live)">—</div></div>
@@ -313,11 +310,10 @@ code{color:var(--accent);background:rgba(184,255,60,.08);padding:1px 6px;border-
 'use strict';
 const POLL = 60_000;
 const notified = new Set();
-let classes    = [];
-let prevClasses = [];          // ← track previous fetch
-let cancelledClasses = [];     // ← persistent across renders until dismissed
+let classes          = [];
+let prevClasses      = [];
+let cancelledClasses = [];
 
-// ─────────────────────────────────────────────
 async function load() {
   setSt('syncing');
   document.getElementById('refreshBtn').classList.add('loading');
@@ -328,11 +324,8 @@ async function load() {
     if (!json.ok) throw new Error(json.error || 'Unknown error');
 
     const fresh = extract(json.data);
-
-    // detect cancellations BEFORE updating classes
     if (prevClasses.length) detectCancelled(prevClasses, fresh);
-
-    classes = fresh;
+    classes     = fresh;
     prevClasses = [...classes];
 
     render(classes);
@@ -355,29 +348,48 @@ async function load() {
   }
 }
 
-// ─────────────────────────────────────────────
-// Cancellation detection
-// ─────────────────────────────────────────────
+// ── extract — fixed subjectId.name + uppercase LIVE ──
+function extract(raw) {
+  let arr = [];
+  if (Array.isArray(raw))                arr = raw;
+  else if (Array.isArray(raw?.classes))  arr = raw.classes;
+  else if (Array.isArray(raw?.data))     arr = raw.data;
+  else if (Array.isArray(raw?.schedule)) arr = raw.schedule;
+  else if (raw?.subject || raw?.title)   arr = [raw];
+  else { const v = Object.values(raw||{}).find(x => Array.isArray(x)); arr = v||[]; }
+
+  return arr.map((r,i) => ({
+    id:      r._id || r.id || `c${i}`,
+    subject: r.subjectId?.name || r.subject || r.title || r.name || r.courseName || 'Class',
+    teacher: r.teacher || r.instructor || r.teacherName || r.faculty || null,
+    startAt: r.startTime || r.start || r.startAt || r.scheduledAt || r.time || null,
+    endAt:   r.endTime || r.end || r.endAt || null,
+    link:    r.meetLink || r.link || r.joinUrl || r.zoomLink || r.url || null,
+    isLive:  !!(r.isLive || r.live || r.status === 'LIVE' || r.status === 'live' || r.ongoing),
+    dur:     r.duration || r.durationMinutes || 60,
+    topic:   r.topic?.trim() || r.description || null,
+    platform:r.platform || r.mode || null,
+  }));
+}
+
+// ── cancellation detection ──
 function detectCancelled(prev, curr) {
   const currIds = new Set(curr.map(c => c.id));
-  const newlyCancelled = prev.filter(c => !currIds.has(c.id) && st(c) !== 'done');
-  if (!newlyCancelled.length) return;
+  const gone    = prev.filter(c => !currIds.has(c.id) && st(c) !== 'done');
+  if (!gone.length) return;
 
-  // merge into persistent list (avoid dupes)
   const existingIds = new Set(cancelledClasses.map(c => c.id));
-  newlyCancelled.forEach(c => {
-    if (!existingIds.has(c.id)) cancelledClasses.push({...c, _cancelled: true});
+  gone.forEach(c => {
+    if (!existingIds.has(c.id)) cancelledClasses.push({...c, _cancelled:true});
   });
 
-  // fire notifications
-  newlyCancelled.forEach(c => {
+  gone.forEach(c => {
     toast('🚫', 'Class Cancelled?', `"${c.subject}" disappeared from the schedule!`);
-    if (Notification.permission === 'granted') {
+    if (Notification.permission === 'granted')
       new Notification('🚫 Possibly Cancelled', {
         body: `${c.subject} was removed from today's schedule.`,
         icon: 'https://deltastudy.site/favicon.ico'
       });
-    }
   });
 
   renderCancelBanner();
@@ -391,19 +403,16 @@ function renderCancelBanner() {
   const list = document.getElementById('cancelList');
   list.innerHTML = '';
   cancelledClasses.forEach(c => {
-    const start = parseT(c.startAt);
-    const tf    = f12(start);
-    const item  = document.createElement('div');
+    const tf   = f12(parseT(c.startAt));
+    const item = document.createElement('div');
     item.className = 'cancel-item';
     item.innerHTML = `
       <div class="cancel-name">${c.subject}</div>
-      ${start ? `<div class="cancel-time">${tf.t} ${tf.ap}</div>` : ''}
-      <div class="cancel-badge">Removed</div>
-    `;
+      <div class="cancel-time">${tf.t} ${tf.ap}</div>
+      <div class="cancel-badge">Removed</div>`;
     list.appendChild(item);
   });
   document.getElementById('cancelBanner').classList.add('show');
-  // update stat counter
   document.getElementById('sCancelled').textContent = cancelledClasses.length;
 }
 
@@ -413,29 +422,7 @@ function dismissCancel() {
   document.getElementById('sCancelled').textContent = '0';
 }
 
-// ─────────────────────────────────────────────
-function extract(raw) {
-  let arr = [];
-  if (Array.isArray(raw))                arr = raw;
-  else if (Array.isArray(raw?.classes))  arr = raw.classes;
-  else if (Array.isArray(raw?.data))     arr = raw.data;
-  else if (Array.isArray(raw?.schedule)) arr = raw.schedule;
-  else if (raw?.subject || raw?.title)   arr = [raw];
-  else { const v = Object.values(raw||{}).find(x => Array.isArray(x)); arr = v||[]; }
-  return arr.map((r,i) => ({
-    id:      r._id||r.id||`c${i}`,
-    subject: r.subject||r.title||r.name||r.courseName||'Class',
-    teacher: r.teacher||r.instructor||r.teacherName||r.faculty||null,
-    startAt: r.startTime||r.start||r.startAt||r.scheduledAt||r.time||null,
-    endAt:   r.endTime||r.end||r.endAt||null,
-    link:    r.meetLink||r.link||r.joinUrl||r.zoomLink||r.url||null,
-    isLive:  !!(r.isLive||r.live||r.status==='live'||r.ongoing),
-    dur:     r.duration||r.durationMinutes||60,
-    topic:   r.topic||r.description||null,
-    platform:r.platform||r.mode||null,
-  }));
-}
-
+// ── helpers ──
 function parseT(s) {
   if (!s) return null;
   if (typeof s === 'number') return new Date(s);
@@ -448,7 +435,7 @@ function parseT(s) {
 function st(c) {
   if (c.isLive) return 'live';
   const s = parseT(c.startAt); if (!s) return 'unknown';
-  const e = c.endAt ? parseT(c.endAt) : new Date(s.getTime()+c.dur*60000);
+  const e = c.endAt ? parseT(c.endAt) : new Date(s.getTime()+(c.dur||60)*60000);
   const n = new Date();
   if (n>=s && n<=e) return 'live';
   if (n<s)          return 'upcoming';
@@ -469,19 +456,23 @@ function cd(ms) {
   return `in ${s}s`;
 }
 
+// ── render ──
 function render(arr) {
   document.getElementById('skeleton').style.display = 'none';
   document.getElementById('emptyState').classList.remove('show');
   const list = document.getElementById('classList');
   list.innerHTML = '';
+
   const sorted = [...arr].sort((a,b)=>{const ta=parseT(a.startAt),tb=parseT(b.startAt);return(ta&&tb)?ta-tb:0;});
   const g = {live:[],upcoming:[],done:[],unknown:[],cancelled:[]};
   let fl = null;
 
-  // add persistent cancelled classes into the group
   cancelledClasses.forEach(c => g.cancelled.push(c));
-
-  sorted.forEach(c => { const s=st(c); g[s].push(c); if(s==='live'&&!fl)fl=c; notify(c); });
+  sorted.forEach(c => {
+    const s=st(c); g[s].push(c);
+    if(s==='live'&&!fl) fl=c;
+    notify(c);
+  });
 
   document.getElementById('statsRow').style.display = '';
   document.getElementById('sTotal').textContent     = arr.length;
@@ -495,36 +486,32 @@ function render(arr) {
     return;
   }
 
-  [
-    {key:'live',      label:'Live Now',           cls:'is-live'},
-    {key:'upcoming',  label:'Upcoming',            cls:'is-up'},
-    {key:'done',      label:'Completed',           cls:'is-done'},
-    {key:'unknown',   label:'Scheduled',           cls:'is-up'},
-    {key:'cancelled', label:'Possibly Cancelled',  cls:'is-cancelled'},
-  ].forEach(({key,label,cls}) => {
+  [{key:'live',label:'Live Now',cls:'is-live'},{key:'upcoming',label:'Upcoming',cls:'is-up'},
+   {key:'done',label:'Completed',cls:'is-done'},{key:'unknown',label:'Scheduled',cls:'is-up'},
+   {key:'cancelled',label:'Possibly Cancelled',cls:'is-cancelled'}]
+  .forEach(({key,label,cls}) => {
     const grp = g[key]; if (!grp.length) return;
     const sh = document.createElement('div');
     sh.className = 'sec-hdr';
     sh.innerHTML = `<div class="sec-lbl">${label}</div><div class="sec-line"></div><div class="sec-n">${grp.length}</div>`;
     list.appendChild(sh);
-    grp.forEach(c => list.appendChild(mkCard(c, cls)));
+    grp.forEach(c => list.appendChild(mkCard(c,cls)));
   });
 
   const banner = document.getElementById('liveBanner');
   if (fl) {
     document.getElementById('lname').textContent = fl.subject;
-    document.getElementById('lmeta').textContent = [fl.teacher,fl.topic].filter(Boolean).join(' · ')||'Happening right now';
-    const ja = document.getElementById('ljoin'); ja.href=fl.link||'#'; ja.style.display=fl.link?'inline-flex':'none';
+    document.getElementById('lmeta').textContent = [fl.topic,fl.teacher].filter(Boolean).join(' · ')||'Happening right now';
+    const ja=document.getElementById('ljoin'); ja.href=fl.link||'#'; ja.style.display=fl.link?'inline-flex':'none';
     banner.classList.add('show');
   } else banner.classList.remove('show');
 
-  // re-render cancel banner in case counts changed
   renderCancelBanner();
 }
 
 function mkCard(c, cls) {
   const s=st(c), start=parseT(c.startAt), tf=f12(start);
-  const isCancelled = cls === 'is-cancelled';
+  const isCancelled = cls==='is-cancelled';
   const badges = {
     'is-live':      '<span class="badge badge-live">● Live</span>',
     'is-up':        '<span class="badge badge-up">Upcoming</span>',
@@ -532,83 +519,102 @@ function mkCard(c, cls) {
     'is-cancelled': '<span class="badge badge-cancelled">🚫 Cancelled?</span>',
   };
   let cdH = '';
-  if (!isCancelled && (s==='upcoming'||s==='unknown')&&start){
+  if (!isCancelled&&(s==='upcoming'||s==='unknown')&&start) {
     const ms=start-Date.now();
     cdH=`<div class="ccd${ms<600000?' urgent':''}" data-ts="${start.getTime()}">${cd(ms)}</div>`;
   }
-  const meta = [];
-  if (c.teacher)  meta.push(`<span>👤 ${c.teacher}</span>`);
-  if (c.platform) meta.push(`<span>📡 ${c.platform}</span>`);
-  if (c.topic)    meta.push(`<span>📌 ${c.topic}</span>`);
-  if (c.dur)      meta.push(`<span>⏱ ${c.dur}m</span>`);
+  const meta=[];
+  if (c.teacher)   meta.push(`<span>👤 ${c.teacher}</span>`);
+  if (c.platform)  meta.push(`<span>📡 ${c.platform}</span>`);
+  if (c.dur)       meta.push(`<span>⏱ ${c.dur}m</span>`);
   if (isCancelled) meta.push(`<span style="color:var(--cancel)">⚠️ Removed from schedule</span>`);
-  let btn = '';
-  if (!isCancelled && c.link && s!=='done'){
+
+  // topic shown as its own styled line, not crammed into meta
+  const topicH = (c.topic && !isCancelled)
+    ? `<div class="ctopic">${c.topic}</div>` : '';
+
+  let btn='';
+  if (!isCancelled&&c.link&&s!=='done') {
     const bc=s==='live'?'red':'grn';
     btn=`<a class="btn-class ${bc}" href="${c.link}" target="_blank">Join →</a>`;
   }
-  const div = document.createElement('div');
-  div.className = `card ${cls}`;
-  div.innerHTML = `<div class="cbody"><div class="ctime"><div class="ctv">${tf.t}</div><div class="cap">${tf.ap}</div>${cdH}</div><div class="cdiv"></div><div class="cinfo"><div class="csub">${c.subject}</div>${meta.length?`<div class="cmeta">${meta.join('')}</div>`:''}</div><div class="cright">${badges[cls]||''}${btn}</div></div>`;
+
+  const div=document.createElement('div');
+  div.className=`card ${cls}`;
+  div.innerHTML=`
+    <div class="cbody">
+      <div class="ctime">
+        <div class="ctv">${tf.t}</div>
+        <div class="cap">${tf.ap}</div>
+        ${cdH}
+      </div>
+      <div class="cdiv"></div>
+      <div class="cinfo">
+        <div class="csub">${c.subject}</div>
+        ${topicH}
+        ${meta.length?`<div class="cmeta">${meta.join('')}</div>`:''}
+      </div>
+      <div class="cright">${badges[cls]||''}${btn}</div>
+    </div>`;
   return div;
 }
 
-setInterval(() => {
-  document.querySelectorAll('.ccd[data-ts]').forEach(el => {
-    const ms = parseInt(el.dataset.ts) - Date.now();
-    el.textContent = ms<=0 ? 'starting now' : cd(ms);
-    el.classList.toggle('urgent', ms<600000);
+setInterval(()=>{
+  document.querySelectorAll('.ccd[data-ts]').forEach(el=>{
+    const ms=parseInt(el.dataset.ts)-Date.now();
+    el.textContent=ms<=0?'starting now':cd(ms);
+    el.classList.toggle('urgent',ms<600000);
   });
-}, 1000);
+},1000);
 
 async function askNotif() {
-  if (!('Notification' in window)) { toast('❌','Not supported','Browser can\'t send notifications.'); return; }
-  const p = await Notification.requestPermission();
-  if (p==='granted') {
+  if (!('Notification' in window)){toast('❌','Not supported','Browser can\'t send notifications.');return;}
+  const p=await Notification.requestPermission();
+  if (p==='granted'){
     document.getElementById('notifBtn').classList.add('active');
-    document.getElementById('notifBtn').textContent = '✅ Alerts On';
+    document.getElementById('notifBtn').textContent='✅ Alerts On';
     toast('✅','Alerts enabled','10-min heads-up before every class.');
   } else toast('🔕','Denied','Allow in browser site settings.');
 }
 
 function notify(c) {
-  const start = parseT(c.startAt); if (!start) return;
-  const ms = start - Date.now(), k = c.id+'_10';
-  if (!notified.has(k)&&ms>0&&ms<=600000) { notified.add(k); fire(c,`Starting in ~${Math.ceil(ms/60000)} min`); }
-  if (!notified.has(k)&&ms>600000) { setTimeout(()=>{ notified.add(k); fire(c,`Starting in 10 minutes${c.teacher?' — '+c.teacher:''}`); }, ms-600000); }
+  const start=parseT(c.startAt); if(!start)return;
+  const ms=start-Date.now(), k=c.id+'_10';
+  if(!notified.has(k)&&ms>0&&ms<=600000){notified.add(k);fire(c,`Starting in ~${Math.ceil(ms/60000)} min`);}
+  if(!notified.has(k)&&ms>600000){setTimeout(()=>{notified.add(k);fire(c,`Starting in 10 minutes${c.teacher?' — '+c.teacher:''}`);},ms-600000);}
 }
 
-function fire(c, body) {
-  if (Notification.permission==='granted') new Notification('⏰ '+c.subject, {body, icon:'https://deltastudy.site/favicon.ico'});
-  toast('⏰', c.subject, body);
+function fire(c,body) {
+  if(Notification.permission==='granted') new Notification('⏰ '+c.subject,{body,icon:'https://deltastudy.site/favicon.ico'});
+  toast('⏰',c.subject,body);
 }
 
 function setSt(s) {
-  const dot=document.getElementById('sdot'), txt=document.getElementById('stxt');
-  dot.className = 'sdot';
-  if      (s==='syncing') { dot.classList.add('syncing'); txt.textContent='Syncing…'; }
-  else if (s==='live')    { dot.classList.add('live');    txt.textContent='Live class!'; }
-  else if (s==='ok')      {                               txt.textContent='Up to date'; }
-  else                    {                               txt.textContent='Error'; }
+  const dot=document.getElementById('sdot'),txt=document.getElementById('stxt');
+  dot.className='sdot';
+  if(s==='syncing'){dot.classList.add('syncing');txt.textContent='Syncing…';}
+  else if(s==='live'){dot.classList.add('live');txt.textContent='Live class!';}
+  else if(s==='ok'){txt.textContent='Up to date';}
+  else{txt.textContent='Error';}
 }
 
-function showErr(html) { const b=document.getElementById('errBox'); b.innerHTML=html; b.classList.add('show'); }
+function showErr(html){const b=document.getElementById('errBox');b.innerHTML=html;b.classList.add('show');}
 
-function toast(icon, title, sub) {
-  const c=document.getElementById('toasts'), el=document.createElement('div');
+function toast(icon,title,sub){
+  const c=document.getElementById('toasts'),el=document.createElement('div');
   el.className='toast';
   el.innerHTML=`<div class="tico">${icon}</div><div><div class="tttl">${title}</div><div class="tsub">${sub}</div></div>`;
   c.appendChild(el);
-  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),260); }, 4500);
+  setTimeout(()=>{el.classList.add('out');setTimeout(()=>el.remove(),260);},4500);
 }
 
-if (Notification.permission==='granted') {
+if(Notification.permission==='granted'){
   document.getElementById('notifBtn').classList.add('active');
-  document.getElementById('notifBtn').textContent = '✅ Alerts On';
+  document.getElementById('notifBtn').textContent='✅ Alerts On';
 }
 
 load();
-setInterval(load, POLL);
+setInterval(load,POLL);
 </script>
 </body>
 </html>
